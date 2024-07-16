@@ -1,0 +1,5 @@
+Host ymmon
+     HostName ymmonitor.koreacentral.cloudapp.azure.com
+     User cupadmin
+     Port 22
+     IdentityFile ~/.ssh/cup_desk_id_rsa
