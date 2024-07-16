@@ -110,7 +110,7 @@ see the DEPRECATION section in apt-key(8) for details.
 * In the [files](./files/1_basic_setting),
 	* `bashrc` 
 		* (move & rename to `~/.bashrc`)
-	* `config, cup_desk_id_rsa`, `cup_desk_id_rsa.pub`
+	* `config`
 		* (move to `~/.ssh/`)
 	* `sources.list`
 		* (move to `/etc/apt/` with `sudo`)
