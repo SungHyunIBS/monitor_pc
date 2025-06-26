@@ -95,6 +95,8 @@ alias lt='ls -aGltrh'
 
 alias rm='\rm -i'
 alias rmd='\rm -i ./*~ ./#* ./.*~'
+alias cp='\cp -i -v'
+alias mv='\mv -i -v'
 alias ln='\ln -s'
 
 source /opt/monitor/venv/bin/activate

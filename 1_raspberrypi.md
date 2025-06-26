@@ -99,12 +99,16 @@ see the DEPRECATION section in apt-key(8) for details.
 
 ## Internet Setting
 * `sudo nmtui`
-	
+
 * (Option) `sudo raspi-config` 
 	* `1 System Options` &rarr; `S1 Wireless LAN`
 	* Set `SSID` and `PW` &rarr; Reboot
 
 * Then reboot
+
+## Hostname
+* `sudo raspi-config`
+	*  `1 System Options` &rarr; `S4 Hostname`
 	
 ## ETC
 * In the [files](./files/1_basic_setting),

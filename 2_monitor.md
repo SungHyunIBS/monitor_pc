@@ -41,32 +41,29 @@ libjasper-dev libgdk-pixbuf2.0-dev
 
 `pip install opencv-python==4.7.0.72`
 
-### Others
+https://github.com/Comfy-Org/comfy-cli/issues/163
+numpy version
+
+### Others Library
 * Install library
 	* `sudo apt install libopenblas-dev`
 
-### InfluxDB-Client
-* Install Influxdb-Client
+### Pip Library
+* Influxdb
 	* `pip install influxdb_client`
-
-### Module-communication
-* Install py-serial
+* PC Info
+	* `pip install psutil`
+* Serial / USB
 	* `pip install pyserial`
-
-### APEX P3
-* Install pyModbusTCP (APEXP3)
+* Modbus, TCP
 	* `pip install pyModbusTCP`
-* Need wired connection using cross-cable
-	* Settings for simultaneous use of wired and wireless Internet
-	* Modify `/etc/dhcpcd.conf` and insert following lines
-		* Wireless : 192.168.1.XXX
-		* Wired    : 192.168.2.XXX
-
-```
-interface eth0
-static ip_address=192.168.2.2/24
-nogateway
-```
+* Modbus, Serial
+	* `pip install pymodbus`
+* Bluetooth
+	* `pip install bleak`
+	* `pip install asyncio`
+* Webcam Analysis
+	* `pip install matplotlib`
 
 ## ETC
 * In the [files](./files/2_supervisor),

@@ -12,7 +12,7 @@ from influxdb_client import InfluxDBClient
 logging.basicConfig(stream=sys.stdout, format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO)
 
 SLOWDIR = '/opt/monitor'
-model   = "UA58"
+model    = "UA58"
 
 def read(devinfo):
 

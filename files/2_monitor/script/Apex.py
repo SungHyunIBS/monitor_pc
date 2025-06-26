@@ -10,6 +10,7 @@ from datetime import datetime
 from influxdb_client import InfluxDBClient
 
 from pyModbusTCP.client import ModbusClient
+import signal
 
 logging.basicConfig(stream=sys.stdout, format="%(asctime)s %(levelname)-8s %(message)s", level=logging.INFO)
 
@@ -22,15 +23,25 @@ SLOWDIR    = '/opt/monitor'
 
 model    = "ApexP3"
 
-def read_serial(client):
+modbus_client = None  
 
+def signal_handler(sig, frame):
+    global modbus_client
+    if modbus_client:
+        logging.info("Received stop signal, sending run_stop to device.")
+        try:
+            run_stop(modbus_client)
+        except Exception as e:
+            logging.error(f"Error stopping device: {e}")
+    logging.info("Exiting gracefully.")
+    sys.exit(0)
+
+def read_serial(client):
     regs   = client.read_holding_registers(4, 2)
     serial = (regs[0] << 16) + regs[1]
     return serial
 
 def read_device_setting(client):
-
-    # check initial setting
     regs   = client.read_holding_registers(28,2)
     delay  = (regs[0] << 16) + regs[1]
     regs   = client.read_holding_registers(30,2)
@@ -49,13 +60,10 @@ def read_device_setting(client):
        client.write_single_register(1, 1)
 
 def read_device_status(client):
-    
-    # check status
     regs    = client.read_holding_registers( 2, 1)
     data    = {}
     data[0] = regs[0] & 0x1        # running
     data[1] = (regs[0] >> 1) & 0x1 # sampling
-
     return data
 
 def run_start(client):
@@ -65,67 +73,63 @@ def run_stop(client):
     client.write_single_register(1, 12)
             
 def read_dust(client):
-
     data = {}
     reg  = client.read_input_registers(1008, 8)
     d0d3  = reg[0] * 65536 + reg[1]
     d0d5  = reg[2] * 65536 + reg[3]
     d5d0  = reg[4] * 65536 + reg[5]
     d10d0 = reg[6] * 65536 + reg[7]
-
     data[0] = d0d3
     data[1] = d0d5
     data[2] = d5d0
     data[3] = d10d0
-   
     return data
 
 def operation(devinfo):
-
-    mod_ip = "172.16.2."+devinfo['dev']
-    c      = ModbusClient(host = mod_ip, port =  502)
-    serial = read_serial(c)
-    read_device_setting(c)
+    global modbus_client
+    mod_ip = "172.16.1." + devinfo['dev']
+    modbus_client = ModbusClient(host=mod_ip, port=502)
+    serial = read_serial(modbus_client)
+    read_device_setting(modbus_client)
     status_r = 0
     status_s = 0
-    status   = read_device_status(c)
+    status   = read_device_status(modbus_client)
     status_r = status[0]
 
     logging.info("Run Start")
     if(status_r == 0):
-        run_start(c)
+        run_start(modbus_client)
         
     while status_r == 0:
-        status   = read_device_status(c)
+        status   = read_device_status(modbus_client)
         status_r = status[0]
         time.sleep(v_sleep)
 
     while status_s == 0:
-        status   = read_device_status(c)
+        status   = read_device_status(modbus_client)
         status_s = status[1]
         time.sleep(v_sleep)
 
     time.sleep(v_sample)
 
     while status_s == 1:
-        status   = read_device_status(c)
+        status   = read_device_status(modbus_client)
         status_s = status[1]
         time.sleep(v_sleep)
 
-    run_stop(c)
+    run_stop(modbus_client)
     logging.info("Run Stop")
     while status_r == 1:
-        status   = read_device_status(c)
+        status   = read_device_status(modbus_client)
         status_r = status[0]
         time.sleep(v_sleep)
 
-    data      = read_dust(c)
+    data      = read_dust(modbus_client)
     wdata = {
         'd0d3'   : float(data[0]),
         'd0d5'   : float(data[1]),
         'd5d0'   : float(data[2]),
         'd10d0'  : float(data[3]),
-        'sample' : float(v_sample),
     }
     
     tdata = {
@@ -133,6 +137,7 @@ def operation(devinfo):
         'model' : model,
         'pos'   : devinfo['pos'],
         'ip'    : devinfo['dev'],
+        'sample' : float(v_sample),
     }
 
     datapoint = {
@@ -145,6 +150,8 @@ def operation(devinfo):
     return datapoint
 
 def main():
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     pos      = os.getenv('DEVICE_POS', '')
     dev      = os.getenv('DEVICE_IP',  '')
@@ -187,6 +194,6 @@ def main():
         except:
             logging.exception('Exception: ')
             time.sleep(60)
-        
+
 if __name__ == '__main__':
     main()
