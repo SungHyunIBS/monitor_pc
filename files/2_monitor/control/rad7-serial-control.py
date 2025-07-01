@@ -27,44 +27,6 @@ def read_until_prompt(ser):
             break
     return data.decode('ascii')
 
-def wait_for_question_prompt(ser, timeout=10):
-    buf = bytearray()
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        b = ser.read()
-        if b:
-            buf.extend(b)
-            if b == b'\n':
-                logging.debug(buf.decode('ascii', errors='ignore'))
-            if b'?' in buf:
-                return buf.decode('ascii', errors='ignore')
-        else:
-            break
-    return buf.decode('ascii', errors='ignore')
-
-def read_until_prompt_or_keywords(ser, keywords=None, timeout=10):
-    buf = bytearray()
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        b = ser.read()
-        if b:
-            buf.extend(b)
-            # 디버그 로그 (한 줄 단위로 보기 좋게)
-            if b == b'\n':
-                logging.debug(buf.decode('ascii', errors='ignore'))
-            # 키워드 탐색
-            if keywords:
-                text = buf.decode('ascii', errors='ignore')
-                for kw in keywords:
-                    if kw in text:
-                        return text
-            # 프롬프트 탐색
-            if len(buf) >= 3 and buf[-3:] == b'\r\n>':
-                return buf.decode('ascii', errors='ignore')
-        else:
-            break
-    return buf.decode('ascii', errors='ignore')
-
 def test_start():
     with serial.Serial(DEV, baudrate=9600, bytesize=8, parity='N', stopbits=1, timeout=10) as ser:
         logging.info('Send ETX')
@@ -179,37 +141,13 @@ def test_purge():
         res = read_until_prompt(ser)
 
         logging.info('Send Test Purge')
-        ser.write(b'Test Purge\r\n')
-        
-        # Purging 메시지 감지
-        purge_msg = read_until_prompt_or_keywords(ser, keywords=["Purging."])
-        logging.info("Purging started:\n" + purge_msg)
-
-        # Purge 지속 시간 동안 대기
-        logging.info(f"Purge in progress for {900} seconds...")
+        ser.write(b'Test Purge\r')
+        res = read_until_prompt(ser)
         time.sleep(900)
-
-        # Stop purge? 메시지 및 ? 대기
-        logging.info("Waiting for Stop purge? prompt...")
-        prompt_res = read_until_prompt_or_keywords(ser, keywords=["Stop purge?", "?"])
-        logging.info("Prompt detected:\n" + prompt_res)
-
-        if "?" in prompt_res:
-            logging.info("Sending Yes to stop purge")
-            ser.write(b'Yes\r\n')
-            ser.flush()
-
-            # 종료 후 응답 수신
-            final_res = read_until_prompt_or_keywords(ser)
-            logging.info("Final response:\n" + final_res)
-        else:
-            logging.warning("Did not detect '?' prompt for Yes input.")
-
-        buf = ser.read(BUFSIZE)
-        if len(buf) > 0:
-            logging.info(buf.decode('ascii'))
-        else:
-            logging.error('No data')
+            
+        logging.info("Purge Stop")
+        ser.write(b'Yes\r\n')
+        res = read_until_prompt(ser)
 
 def parse_runnum(data):
     runnum = None
